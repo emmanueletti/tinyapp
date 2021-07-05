@@ -1,0 +1,27 @@
+{
+  "name": "tinyapp",
+  "version": "1.0.0",
+  "description": "URL shortner project for LHL",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emmanueletti/tinyapp.git"
+  },
+  "keywords": [],
+  "author": "Emmanuel Etti",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/emmanueletti/tinyapp/issues"
+  },
+  "homepage": "https://github.com/emmanueletti/tinyapp#readme",
+  "devDependencies": {
+    "nodemon": "^2.0.9"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "morgan": "^1.10.0"
+  }
+}
