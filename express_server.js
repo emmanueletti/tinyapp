@@ -4,7 +4,7 @@ const app = express();
 const PORT = 8080;
 
 // middleware
-// app.use(morgan('dev'));
+app.use(morgan('dev'));
 
 // data
 const urlDatabase = {
@@ -13,13 +13,18 @@ const urlDatabase = {
 };
 
 // routes
-app.get('/urlsss', (req, res) => {
+app.get('/', (req, res) => {
   res.send('welcome to my server');
+});
+
+app.get('/urls.json', (req, res) => {
+  res.json(urlDatabase);
 });
 
 app.use(function (req, res, next) {
   res.status(404).send("Sorry can't find that!");
 });
+
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
 });
