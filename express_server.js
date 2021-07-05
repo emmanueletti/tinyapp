@@ -3,6 +3,9 @@ const morgan = require('morgan');
 const app = express();
 const PORT = 8080;
 
+// setting ejs as view engine
+app.set('view engine', 'ejs');
+
 // middleware
 app.use(morgan('dev'));
 
@@ -15,6 +18,10 @@ const urlDatabase = {
 // routes
 app.get('/', (req, res) => {
   res.send('welcome to my server');
+});
+
+app.get('/hello', (req, res) => {
+  res.send('<html><body>Hello <b>World</b></body></html>\n');
 });
 
 app.get('/urls.json', (req, res) => {
