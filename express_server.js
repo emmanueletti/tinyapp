@@ -14,7 +14,7 @@ const generateRandomString = () => {
     output += String.fromCharCode(randomNum);
   }
 
-  console.log(output);
+  return output;
 };
 
 generateRandomString();
@@ -51,7 +51,8 @@ app.get('/urls/new', (req, res) => {
 });
 
 app.post('/urls', (req, res) => {
-  console.log(req.body);
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = req.body.longURL;
   res.send('got it');
 });
 
