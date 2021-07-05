@@ -20,17 +20,19 @@ app.get('/', (req, res) => {
   res.send('welcome to my server');
 });
 
+app.get('/urls.json', (req, res) => {
+  res.json(urlDatabase);
+});
+
 app.get('/urls', (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render('urls_index', templateVars);
 });
 
-app.get('/urls.json', (req, res) => {
-  res.json(urlDatabase);
-});
+app.get('/urls/:shortURL', (req, res) => {
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
 
-app.use(function (req, res, next) {
-  res.status(404).send("Sorry can't find that!");
+  res.render('urls_show.ejs', templateVars);
 });
 
 app.listen(PORT, () => {
