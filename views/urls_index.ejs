@@ -13,6 +13,7 @@
     />
     <title>TinyApp</title>
   </head>
+  <%- include('./partials/_header'); %>
   <body>
     <main style="margin: 1em">
       <h3>My URLs</h3>
@@ -32,7 +33,7 @@
           <% } %>
         </tbody>
       </table>
-      <button href="#">Shorten New URL</button>
+      <a href="#"><button type="button" class="btn btn-primary btn-lg">Shorten New URL</button></a>
     </main>
     <!-- Bootstrap JS -->
     <script
