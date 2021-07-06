@@ -1,5 +1,6 @@
 const express = require('express');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 const PORT = 8080;
@@ -22,6 +23,7 @@ app.set('view engine', 'ejs');
 /* MIDDLE WARE */
 app.use(morgan('dev'));
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 
 /* PSUEDO DATABASE */
 const urlDatabase = {
@@ -37,13 +39,19 @@ app.get('/', (req, res) => {
 
 // Browse GET /urls
 app.get('/urls', (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies.username,
+  };
   res.render('urls_index', templateVars);
 });
 
-// Form to Add - important to be above GET /urls/:shortURL
+// Form to Add new URL - important to be above GET /urls/:shortURL
 app.get('/urls/new', (req, res) => {
-  res.render('urls_new.ejs');
+  const templateVars = {
+    username: req.cookies.username,
+  };
+  res.render('urls_new.ejs', templateVars);
 });
 
 // Read GET /urls/:shortURL
@@ -51,6 +59,7 @@ app.get('/urls/:shortURL', (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
+    username: req.cookies.username,
   };
   res.render('urls_show.ejs', templateVars);
 });
@@ -82,6 +91,16 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 app.get('/u/:shortURL', (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
   res.redirect(`${longURL}`);
+});
+
+// Functionality - POST /login - login
+app.post('/login', (req, res) => {
+  res.cookie('username', req.body.username).redirect('/urls');
+});
+
+// Functionality - POST /logout - logout
+app.post('/logout', (req, res) => {
+  res.clearCookie('username').redirect('/urls');
 });
 
 // turn on server
