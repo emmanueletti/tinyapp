@@ -70,10 +70,21 @@ app.get('/u/:shortURL', (req, res) => {
 });
 
 app.post('/urls/:shortURL/delete', (req, res) => {
-  console.log(req.params);
   delete urlDatabase[req.params.shortURL];
-  console.log(urlDatabase);
   res.redirect('/urls');
+});
+
+app.post('/urls/:shortURL/update', (req, res) => {
+  const updatedLongURL = req.body.longURL;
+  const shortURL = req.params.shortURL;
+  urlDatabase[shortURL] = updatedLongURL;
+
+  const templateVars = {
+    longURL: updatedLongURL,
+    shortURL: shortURL,
+  };
+
+  res.render('urls_show.ejs', templateVars);
 });
 
 app.listen(PORT, () => {
