@@ -26,9 +26,24 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 /* PSUEDO DATABASE */
+// url data
 const urlDatabase = {
   b2xVn2: 'http://www.lighthouselabs.ca',
   '9sm5xK': 'http://www.google.com',
+};
+
+// users data
+const users = {
+  userRandomID: {
+    id: 'userRandomID',
+    email: 'user@example.com',
+    password: 'purple-monkey-dinosaur',
+  },
+  user2RandomID: {
+    id: 'user2RandomID',
+    email: 'user2@example.com',
+    password: 'dishwasher-funk',
+  },
 };
 
 /* ROUTES */
@@ -41,7 +56,7 @@ app.get('/', (req, res) => {
 app.get('/urls', (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies.username,
+    userID: req.cookies['user_id'],
   };
   res.render('urls_index', templateVars);
 });
@@ -49,7 +64,7 @@ app.get('/urls', (req, res) => {
 // Form to Add new URL - important to be above GET /urls/:shortURL
 app.get('/urls/new', (req, res) => {
   const templateVars = {
-    username: req.cookies.username,
+    userID: req.cookies['user_id'],
   };
   res.render('urls_new.ejs', templateVars);
 });
@@ -59,7 +74,7 @@ app.get('/urls/:shortURL', (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies.username,
+    userID: req.cookies['user_id'],
   };
   res.render('urls_show.ejs', templateVars);
 });
@@ -93,14 +108,72 @@ app.get('/u/:shortURL', (req, res) => {
   res.redirect(`${longURL}`);
 });
 
-// Functionality - POST /login - login
-app.post('/login', (req, res) => {
-  res.cookie('username', req.body.username).redirect('/urls');
+// Functionality - POST /logout - clear cookies
+app.post('/logout', (req, res) => {
+  res.clearCookie('user_id').redirect('/urls');
 });
 
-// Functionality - POST /logout - logout
-app.post('/logout', (req, res) => {
-  res.clearCookie('username').redirect('/urls');
+// Functionality - GET /register - registration form
+app.get('/register', (req, res) => {
+  const templateVars = {
+    userID: req.cookies['user_id'],
+  };
+  res.render('urls_register', templateVars);
+});
+
+// Functionality - POST /register - create new account
+app.post('/register', (req, res) => {
+  if (!req.body.email || !req.body.password) {
+    res.status(400).send('valid info please');
+    return;
+  }
+
+  for (const userKey in users) {
+    if (users[userKey].email === req.body.email) {
+      res.status(400).send('account already exists');
+      return;
+    }
+  }
+
+  const userID = generateRandomString();
+  users[userID] = {
+    id: userID,
+    email: req.body.email,
+    password: req.body.password,
+  };
+
+  res.cookie('user_id', userID).redirect('/urls');
+});
+
+// GET login form
+app.get('/login', (req, res) => {
+  const cookieID = req.cookies['user_id'];
+  const templateVars = {
+    userID: cookieID,
+  };
+  res.render('urls_login', templateVars);
+});
+
+// login
+app.post('/login', (req, res) => {
+  // check if valid info has been submitted
+  if (!req.body.email || !req.body.password) {
+    res.status(400).send('valid info please');
+    return;
+  }
+
+  // check if account exists
+  for (const userKey in users) {
+    if (users[userKey].email === req.body.email) {
+      const userID = users[userKey].id;
+
+      // set cookie
+      res.cookie('user_id', userID).redirect('/urls');
+      return;
+    }
+  }
+  res.status(400).send('account does not exists');
+  return;
 });
 
 // turn on server
