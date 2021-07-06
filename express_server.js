@@ -1,6 +1,5 @@
 const express = require('express');
 const morgan = require('morgan');
-const bodyParser = require('body-parser');
 
 const app = express();
 const PORT = 8080;
@@ -17,45 +16,37 @@ const generateRandomString = () => {
   return output;
 };
 
-generateRandomString();
-
 // setting ejs as view engine
 app.set('view engine', 'ejs');
 
-// MIDDLE WARE
+/* MIDDLE WARE */
 app.use(morgan('dev'));
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false }));
 
-// PSUEDO DATABASE
+/* PSUEDO DATABASE */
 const urlDatabase = {
   b2xVn2: 'http://www.lighthouselabs.ca',
   '9sm5xK': 'http://www.google.com',
 };
 
-// ROUTES
+/* ROUTES */
+// Homepage GET /
 app.get('/', (req, res) => {
   res.send('welcome to my server');
 });
 
-app.get('/urls.json', (req, res) => {
-  res.json(urlDatabase);
-});
-
+// Browse GET /urls
 app.get('/urls', (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render('urls_index', templateVars);
 });
 
+// Form to Add - important to be above GET /urls/:shortURL
 app.get('/urls/new', (req, res) => {
   res.render('urls_new.ejs');
 });
 
-app.post('/urls', (req, res) => {
-  const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
-  res.redirect(`/urls/${shortURL}`);
-});
-
+// Read GET /urls/:shortURL
 app.get('/urls/:shortURL', (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
@@ -64,29 +55,36 @@ app.get('/urls/:shortURL', (req, res) => {
   res.render('urls_show.ejs', templateVars);
 });
 
-app.get('/u/:shortURL', (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
-  res.redirect(`${longURL}`);
+// Edit POST /urls/:shortURL/update
+app.post('/urls/:shortURL/update', (req, res) => {
+  const longURL = req.body.longURL;
+  const shortURL = req.params.shortURL;
+  urlDatabase[shortURL] = longURL;
+
+  // POST => GET => Redirect pattern
+  res.redirect('/urls');
 });
 
+// Add POST /urls
+app.post('/urls', (req, res) => {
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = req.body.longURL;
+  res.redirect(`/urls/${shortURL}`);
+});
+
+// Delete POST /urls/:shortURL/delete
 app.post('/urls/:shortURL/delete', (req, res) => {
   delete urlDatabase[req.params.shortURL];
   res.redirect('/urls');
 });
 
-app.post('/urls/:shortURL/update', (req, res) => {
-  const updatedLongURL = req.body.longURL;
-  const shortURL = req.params.shortURL;
-  urlDatabase[shortURL] = updatedLongURL;
-
-  const templateVars = {
-    longURL: updatedLongURL,
-    shortURL: shortURL,
-  };
-
-  res.render('urls_show.ejs', templateVars);
+// Functionality GET /u/:shortURL - visit site
+app.get('/u/:shortURL', (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL];
+  res.redirect(`${longURL}`);
 });
 
+// turn on server
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
 });
