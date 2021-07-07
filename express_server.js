@@ -39,7 +39,7 @@ const urlDatabase = {
   },
   i3BoGr: {
     longURL: 'https://www.google.ca',
-    userID: 'aJ48lW',
+    userID: 'userRandomID',
   },
   abcdef: {
     longURL: 'https://www.xkcd.com',
@@ -91,6 +91,17 @@ const checkEmailExists = (email) => {
   return false;
 };
 
+// filter database
+const urlsForUser = (cookiesID) => {
+  const filteredDataBase = {};
+  for (const key in urlDatabase) {
+    if (urlDatabase[key].userID === cookiesID) {
+      filteredDataBase[key] = urlDatabase[key];
+    }
+  }
+  return filteredDataBase;
+};
+
 /* ROUTES */
 // Homepage GET /
 app.get('/', (req, res) => {
@@ -104,7 +115,14 @@ app.get('/urls', (req, res) => {
     userID: req.cookies['user_id'],
   };
 
-  console.log(templateVars.urls.urlDatabase);
+  // client not logged in
+  if (!req.cookies['user_id']) {
+    res.status(401).render('urls_prompt', templateVars);
+    return;
+  }
+
+  templateVars.urls = urlsForUser(req.cookies['user_id']);
+
   res.render('urls_index', templateVars);
 });
 
@@ -179,7 +197,7 @@ app.get('/u/:shortURL', (req, res) => {
 
 // Functionality - POST /logout - clear cookies
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id').redirect('/urls');
+  res.clearCookie('user_id').redirect('/login');
 });
 
 // Functionality - GET /register - registration form
