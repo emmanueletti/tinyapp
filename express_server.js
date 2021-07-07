@@ -12,7 +12,6 @@ const checkEmailExists = require('./lib/checkEmailExists');
 const app = express();
 const PORT = 8080;
 
-// setting ejs as view engine
 app.set('view engine', 'ejs');
 
 /* MIDDLE WARE */
@@ -33,8 +32,7 @@ app.get('/', (req, res) => {
 app.get('/urls', (req, res) => {
   // client not logged in
   if (!req.cookies['user_id']) {
-    res.status(401).render('urls_prompt');
-    return;
+    return res.status(401).send('<h2> Please Log In </h2>');
   }
 
   // templateVars urls property is a filtered verion of the url database
