@@ -185,16 +185,21 @@ app.post('/login', (req, res) => {
   }
 
   // check if account exists
-
   if (checkEmailExists(req.body.email)) {
     const userID = findCorrespondingId('email', req.body.email);
-    // set cookie
-    res.cookie('user_id', userID).redirect('/urls');
+
+    // check if password is correct
+    if (users[userID].password === req.body.password) {
+      // set cookie
+      res.cookie('user_id', userID).redirect('/urls');
+      return;
+    }
+
+    res.status(403).send('wrong password');
     return;
   }
 
-  res.status(400).send('account does not exists');
-  return;
+  res.status(403).send('account does not exists');
 });
 
 // turn on server
