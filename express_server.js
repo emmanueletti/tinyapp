@@ -30,17 +30,21 @@ app.get('/', (req, res) => {
 
 // Browse GET /urls
 app.get('/urls', (req, res) => {
-  // check if user is logged in
-  const user = req.cookies['user_id'];
-  if (!user) {
+  // check if request has a user_id property in cookies
+  const userID = req.cookies['user_id'];
+  if (!userID) {
     return res.status(401).send('<h2> Please Log In </h2>');
   }
 
-  // templateVars urls property is a filtered verion of the url database
-  // only contains shortLinks that belong to particular user_id
+  // check if user_id in request matches user in database
+  if (!users[userID]) {
+    return res.status(401).send('<h2> Unknown User ID: Please Log In </h2>');
+  }
+
+  // filter urls to just the ones belonging to userID
   const templateVars = {
-    urls: urlsForUser(req.cookies['user_id']),
-    userID: req.cookies['user_id'],
+    urls: urlsForUser(userID),
+    userID,
   };
 
   res.render('urls_index', templateVars);
@@ -48,17 +52,18 @@ app.get('/urls', (req, res) => {
 
 // Form to Add new URL - important to be above GET /urls/:shortURL
 app.get('/urls/new', (req, res) => {
-  // client not logged in
-  if (!req.cookies['user_id']) {
-    res.status(401).render('urls_prompt');
-    return;
+  // check if request has a user_id property in cookies
+  const userID = req.cookies['user_id'];
+  if (!userID) {
+    return res.status(401).send('<h2> Please Log In </h2>');
   }
 
-  const templateVars = {
-    userID: req.cookies['user_id'],
-  };
+  // check if user_id in request matches user in database
+  if (!users[userID]) {
+    return res.status(401).send('<h2> Unknown User ID: Please Log In </h2>');
+  }
 
-  res.render('urls_new.ejs', templateVars);
+  res.render('urls_new.ejs', { userID });
 });
 
 // Read GET /urls/:shortURL
