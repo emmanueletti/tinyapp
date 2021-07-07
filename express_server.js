@@ -25,11 +25,26 @@ app.use(morgan('dev'));
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-/* PSUEDO DATABASE */
+/* DATABASE */
 // url data
+// const urlDatabase = {
+//   b2xVn2: 'http://www.lighthouselabs.ca',
+//   '9sm5xK': 'http://www.google.com',
+// };
+
 const urlDatabase = {
-  b2xVn2: 'http://www.lighthouselabs.ca',
-  '9sm5xK': 'http://www.google.com',
+  b6UTxQ: {
+    longURL: 'https://www.tsn.ca',
+    userID: 'aJ48lW',
+  },
+  i3BoGr: {
+    longURL: 'https://www.google.ca',
+    userID: 'aJ48lW',
+  },
+  abcdef: {
+    longURL: 'https://www.xkcd.com',
+    userID: 'user3RandomID',
+  },
 };
 
 // users data
@@ -43,6 +58,11 @@ const users = {
     id: 'user2RandomID',
     email: 'user2@example.com',
     password: 'dishwasher-funk',
+  },
+  user3RandomID: {
+    id: 'user3RandomID',
+    email: 'aa@gmail.com',
+    password: '123',
   },
 };
 
@@ -70,6 +90,7 @@ const checkEmailExists = (email) => {
   }
   return false;
 };
+
 /* ROUTES */
 // Homepage GET /
 app.get('/', (req, res) => {
@@ -82,11 +103,19 @@ app.get('/urls', (req, res) => {
     urls: urlDatabase,
     userID: req.cookies['user_id'],
   };
+
+  console.log(templateVars.urls.urlDatabase);
   res.render('urls_index', templateVars);
 });
 
 // Form to Add new URL - important to be above GET /urls/:shortURL
 app.get('/urls/new', (req, res) => {
+  // client not logged in
+  if (!req.cookies['user_id']) {
+    res.status(401).send('Error: please log in first');
+    return;
+  }
+
   const templateVars = {
     userID: req.cookies['user_id'],
   };
@@ -97,7 +126,7 @@ app.get('/urls/new', (req, res) => {
 app.get('/urls/:shortURL', (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
+    longURL: urlDatabase[req.params.shortURL].longURL,
     userID: req.cookies['user_id'],
   };
   res.render('urls_show.ejs', templateVars);
@@ -107,7 +136,7 @@ app.get('/urls/:shortURL', (req, res) => {
 app.post('/urls/:shortURL/update', (req, res) => {
   const longURL = req.body.longURL;
   const shortURL = req.params.shortURL;
-  urlDatabase[shortURL] = longURL;
+  urlDatabase[shortURL].longURL = longURL;
 
   // POST => GET => Redirect pattern
   res.redirect('/urls');
@@ -115,8 +144,19 @@ app.post('/urls/:shortURL/update', (req, res) => {
 
 // Add POST /urls
 app.post('/urls', (req, res) => {
+  // client not logged in
+  if (!req.cookies['user_id']) {
+    res.status(401).send('Error: Please login first');
+    return;
+  }
+
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
+
+  urlDatabase[shortURL] = {
+    longURL: req.body.longURL,
+    userID: req.cookies['user_id'],
+  };
+  urlDatabase[shortURL].longURL = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -128,7 +168,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 
 // Functionality GET /u/:shortURL - visit site
 app.get('/u/:shortURL', (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(`${longURL}`);
 });
 
@@ -169,6 +209,12 @@ app.post('/register', (req, res) => {
 
 // GET login form
 app.get('/login', (req, res) => {
+  // user already logged in
+  if (req.cookies['user_id']) {
+    res.redirect('/urls');
+    return;
+  }
+
   const cookieID = req.cookies['user_id'];
   const templateVars = {
     userID: cookieID,
