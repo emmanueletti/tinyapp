@@ -2,7 +2,7 @@ const express = require('express');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 
-const findCorrespondingId = require('./lib/findCorrespondingId');
+const findUserId = require('./lib/findUserId');
 const urlDatabase = require('./database/urlDatabase');
 const users = require('./database/usersDataBase');
 const generateRandomString = require('./lib/generateRandomString');
@@ -29,7 +29,7 @@ app.get('/', (req, res) => {
 
 /* CORE B.R.E.A.D / C.R.U.D FUNCTIONALITY */
 
-// Browse Feature - GET /urls
+// Browse Feature - gets all the urls of a user - GET /urls
 app.get('/urls', (req, res) => {
   const userID = req.cookies['user_id'];
 
@@ -48,7 +48,7 @@ app.get('/urls', (req, res) => {
   return res.render('urls_index', templateVars);
 });
 
-// Form to Add new URL - important to be above GET /urls/:shortURL
+// Form to Add new URL - important to be above GET /urls/:shortURL - GET /urls/new
 app.get('/urls/new', (req, res) => {
   const userID = req.cookies['user_id'];
 
@@ -61,7 +61,7 @@ app.get('/urls/new', (req, res) => {
   return res.render('urls_new.ejs', { userID });
 });
 
-// Read Feature - GET /urls/:shortURL
+// Read Feature - gets the detailed info of a specific shortURL - GET /urls/:shortURL
 app.get('/urls/:shortURL', (req, res) => {
   const userID = req.cookies['user_id'];
   const shortURL = req.params.shortURL;
@@ -91,7 +91,7 @@ app.get('/urls/:shortURL', (req, res) => {
   return res.render('urls_show.ejs', templateVars);
 });
 
-// Edit Feature - POST /urls/:shortURL/update
+// Edit Feature - updatea the longURL of a specific shortURL - POST /urls/:shortURL/update
 app.post('/urls/:shortURL/update', (req, res) => {
   const userID = req.cookies['user_id'];
   const longURL = req.body.longURL;
@@ -116,7 +116,7 @@ app.post('/urls/:shortURL/update', (req, res) => {
   return res.redirect('/urls');
 });
 
-// Add Feature - POST /urls
+// Add Feature - create a new shortURL - POST /urls
 app.post('/urls', (req, res) => {
   const userID = req.cookies['user_id'];
   const longURL = req.body.longURL;
@@ -134,7 +134,7 @@ app.post('/urls', (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
-// Delete POST /urls/:shortURL/delete
+// Delete Feature - deletes a shortURL from database - POST /urls/:shortURL/delete
 app.post('/urls/:shortURL/delete', (req, res) => {
   const userID = req.cookies['user_id'];
   const shortURL = req.params.shortURL;
@@ -155,90 +155,96 @@ app.post('/urls/:shortURL/delete', (req, res) => {
   res.redirect('/urls');
 });
 
-// Functionality GET /u/:shortURL - visiting a site using the shortlink
+// Functionality - visiting a site using the shortlink - GET /u/:shortURL
 app.get('/u/:shortURL', (req, res) => {
-  if (!urlDatabase[req.params.shortURL]) {
-    res.status(400).send('Error: link does not exist');
-    return;
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL].longURL;
+
+  // check if link exists
+  if (!urlDatabase[shortURL]) {
+    return res.status(400).send('<h2>Error: link does not exist</h2');
   }
 
-  const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(`${longURL}`);
 });
 
-// Functionality - POST /logout - clear cookies
+// Functionality - clearing cookies - POST /logout
 app.post('/logout', (req, res) => {
   res.clearCookie('user_id').redirect('/login');
 });
 
-// Functionality - GET /register - registration form
+// Functionality - get the registeration form - GET /register
 app.get('/register', (req, res) => {
-  const templateVars = {
-    userID: req.cookies['user_id'],
-  };
-  res.render('urls_register', templateVars);
+  const userID = req.cookies['user_id'];
+
+  // check if user is stil l logged in
+  if (userID) {
+    res.status(400).send('<h1> Please Log out first </h2>');
+  }
+
+  res.render('urls_register', { userID });
 });
 
-// Functionality - POST /register - create new account
+// Functionality - create new account - POST /register
 app.post('/register', (req, res) => {
-  if (!req.body.email || !req.body.password) {
-    res.status(400).send('valid info please');
-    return;
+  const email = req.body.email;
+  const password = req.body.password;
+  const id = generateRandomString();
+
+  // check that valid email and passwords have been sent
+  if (!email || !password) {
+    return res.status(400).send('<h2> Please provide a valid email and password </h2');
   }
 
-  if (checkEmailExists(req.body.email)) {
-    res.status(400).send('account already exists');
-    return;
+  // check if email already exists
+  if (checkEmailExists(email)) {
+    return res.status(400).send('<h2> Account already exists </h2>');
   }
 
-  const userID = generateRandomString();
-  users[userID] = {
-    id: userID,
-    email: req.body.email,
-    password: req.body.password,
-  };
+  // create new user in database
+  // naming "id" instead of "userID" to use destructuring
+  users[id] = { id, email, password };
 
-  res.cookie('user_id', userID).redirect('/urls');
+  // set cookie and redirect
+  res.cookie('user_id', id).redirect('/urls');
 });
 
-// GET login form
+// Functionality - get login form - GET /login
 app.get('/login', (req, res) => {
-  // first check if userID is present
-  // then check if user_id cookie matches something in our database
-  // then check
-  // user already logged in
+  const userID = req.cookies['user_id'];
 
-  const cookieID = req.cookies['user_id'];
-  const templateVars = {
-    userID: cookieID,
-  };
-  res.render('urls_login', templateVars);
+  // check if user is already logged in
+  if (userID) {
+    res.redirect('/urls');
+  }
+
+  res.render('urls_login', { userID });
 });
 
-// login
+// Funcitonality - "login" by adding cookie user_id - POST /login
 app.post('/login', (req, res) => {
-  // check if valid info has been submitted
-  if (!req.body.email || !req.body.password) {
-    res.status(400).send('valid info please');
-    return;
+  const email = req.body.email;
+  const password = req.body.password;
+
+  // check that valid email and passwords have been sent
+  if (!email || !password) {
+    return res.status(400).send('<h2> Please provide a valid email and password </h2');
   }
 
   // check if account exists
-  if (checkEmailExists(req.body.email)) {
-    const userID = findCorrespondingId('email', req.body.email);
-
-    // check if password is correct
-    if (users[userID].password === req.body.password) {
-      // set cookie
-      res.cookie('user_id', userID).redirect('/urls');
-      return;
-    }
-
-    res.status(403).send('wrong password');
-    return;
+  if (!checkEmailExists(email)) {
+    return res.status(403).send('<h2> Email does not exist </h2>');
   }
 
-  res.status(403).send('account does not exists');
+  const userID = findUserId(users, 'email', email);
+
+  // check if password is correct
+  if (users[userID].password !== password) {
+    return res.status(403).send('<h2> Password is incorrrect </h2>');
+  }
+
+  // set cookie and redirect to /url
+  return res.cookie('user_id', userID).redirect('/urls');
 });
 
 // turn on server
