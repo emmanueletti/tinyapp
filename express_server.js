@@ -2,20 +2,15 @@ const express = require('express');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 
+const findCorrespondingId = require('./lib/findCorrespondingId');
+const urlDatabase = require('./lib/urlDatabase');
+const users = require('./lib/usersDataBase');
+const generateRandomString = require('./lib/generateRandomString');
+const urlsForUser = require('./lib/urlsForUser');
+const checkEmailExists = require('./lib/checkEmailExists');
+
 const app = express();
 const PORT = 8080;
-
-const generateRandomString = () => {
-  let output = '';
-
-  // generate 6 random value betweena ascii a(65) and z(122)
-  for (let i = 0; i < 6; i++) {
-    let randomNum = Math.floor(Math.random() * (122 - 97) + 97);
-    output += String.fromCharCode(randomNum);
-  }
-
-  return output;
-};
 
 // setting ejs as view engine
 app.set('view engine', 'ejs');
@@ -25,103 +20,29 @@ app.use(morgan('dev'));
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-/* DATABASE */
-// url data
-// const urlDatabase = {
-//   b2xVn2: 'http://www.lighthouselabs.ca',
-//   '9sm5xK': 'http://www.google.com',
-// };
-
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: 'https://www.tsn.ca',
-    userID: 'aJ48lW',
-  },
-  i3BoGr: {
-    longURL: 'https://www.google.ca',
-    userID: 'userRandomID',
-  },
-  abcdef: {
-    longURL: 'https://www.xkcd.com',
-    userID: 'user3RandomID',
-  },
-};
-
-// users data
-const users = {
-  userRandomID: {
-    id: 'userRandomID',
-    email: 'user@example.com',
-    password: 'purple-monkey-dinosaur',
-  },
-  user2RandomID: {
-    id: 'user2RandomID',
-    email: 'user2@example.com',
-    password: 'dishwasher-funk',
-  },
-  user3RandomID: {
-    id: 'user3RandomID',
-    email: 'aa@gmail.com',
-    password: '123',
-  },
-};
-
-/**
- * Search through user database and finds the id of the user object that has the key:value passed in
- * Useful when you only know (for example) an existing email and would like to know the id of the account it belongs to
- * @param {string} key - you already know
- * @param {string} value
- * @returns user's id property || undefined if not found
- */
-const findCorrespondingId = (key, value) => {
-  for (const userKey in users) {
-    if (users[userKey][key] === value) {
-      return users[userKey].id;
-    }
-  }
-  return undefined;
-};
-
-const checkEmailExists = (email) => {
-  for (const userKey in users) {
-    if (users[userKey].email === email) {
-      return true;
-    }
-  }
-  return false;
-};
-
-// filter database
-const urlsForUser = (cookiesID) => {
-  const filteredDataBase = {};
-  for (const key in urlDatabase) {
-    if (urlDatabase[key].userID === cookiesID) {
-      filteredDataBase[key] = urlDatabase[key];
-    }
-  }
-  return filteredDataBase;
-};
-
 /* ROUTES */
+
 // Homepage GET /
 app.get('/', (req, res) => {
-  res.send('welcome to my server');
+  res.redirect('/login');
 });
+
+/* CORE B.R.E.A.D FUNCTIONALITY */
 
 // Browse GET /urls
 app.get('/urls', (req, res) => {
-  const templateVars = {
-    urls: urlDatabase,
-    userID: req.cookies['user_id'],
-  };
-
   // client not logged in
   if (!req.cookies['user_id']) {
-    res.status(401).render('urls_prompt', templateVars);
+    res.status(401).render('urls_prompt');
     return;
   }
 
-  templateVars.urls = urlsForUser(req.cookies['user_id']);
+  // templateVars urls property is a filtered verion of the url database
+  // only contains shortLinks that belong to particular user_id
+  const templateVars = {
+    urls: urlsForUser(req.cookies['user_id']),
+    userID: req.cookies['user_id'],
+  };
 
   res.render('urls_index', templateVars);
 });
@@ -130,26 +51,26 @@ app.get('/urls', (req, res) => {
 app.get('/urls/new', (req, res) => {
   // client not logged in
   if (!req.cookies['user_id']) {
-    res.status(401).send('Error: please log in first');
+    res.status(401).render('urls_prompt');
     return;
   }
 
   const templateVars = {
     userID: req.cookies['user_id'],
   };
+
   res.render('urls_new.ejs', templateVars);
 });
 
 // Read GET /urls/:shortURL
 app.get('/urls/:shortURL', (req, res) => {
-  // access shortlink that doesn't exist at all
+  // accessing shortlink that doesn't exist at all
   if (!urlDatabase[req.params.shortURL]) {
     res.status(401).render('urls_accessError');
   }
 
   // accessing shortlink that doesnt belong to user
   if (req.cookies['user_id'] !== urlDatabase[req.params.shortURL].userID) {
-    //
     res.status(401).render('urls_accessError');
     return;
   }
@@ -199,6 +120,7 @@ app.post('/urls', (req, res) => {
     longURL: req.body.longURL,
     userID: req.cookies['user_id'],
   };
+
   urlDatabase[shortURL].longURL = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);
 });
@@ -221,7 +143,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
   res.redirect('/urls');
 });
 
-// Functionality GET /u/:shortURL - visit site
+// Functionality GET /u/:shortURL - visiting a site using the shortlink
 app.get('/u/:shortURL', (req, res) => {
   if (!urlDatabase[req.params.shortURL]) {
     res.status(400).send('Error: link does not exist');
