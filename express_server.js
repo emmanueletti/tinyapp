@@ -46,6 +46,30 @@ const users = {
   },
 };
 
+/**
+ * Search through user database and finds the id of the user object that has the key:value passed in
+ * Useful when you only know (for example) an existing email and would like to know the id of the account it belongs to
+ * @param {string} key - you already know
+ * @param {string} value
+ * @returns user's id property || undefined if not found
+ */
+const findCorrespondingId = (key, value) => {
+  for (const userKey in users) {
+    if (users[userKey][key] === value) {
+      return users[userKey].id;
+    }
+  }
+  return undefined;
+};
+
+const checkEmailExists = (email) => {
+  for (const userKey in users) {
+    if (users[userKey].email === email) {
+      return true;
+    }
+  }
+  return false;
+};
 /* ROUTES */
 // Homepage GET /
 app.get('/', (req, res) => {
@@ -128,11 +152,9 @@ app.post('/register', (req, res) => {
     return;
   }
 
-  for (const userKey in users) {
-    if (users[userKey].email === req.body.email) {
-      res.status(400).send('account already exists');
-      return;
-    }
+  if (checkEmailExists(req.body.email)) {
+    res.status(400).send('account already exists');
+    return;
   }
 
   const userID = generateRandomString();
@@ -163,15 +185,14 @@ app.post('/login', (req, res) => {
   }
 
   // check if account exists
-  for (const userKey in users) {
-    if (users[userKey].email === req.body.email) {
-      const userID = users[userKey].id;
 
-      // set cookie
-      res.cookie('user_id', userID).redirect('/urls');
-      return;
-    }
+  if (checkEmailExists(req.body.email)) {
+    const userID = findCorrespondingId('email', req.body.email);
+    // set cookie
+    res.cookie('user_id', userID).redirect('/urls');
+    return;
   }
+
   res.status(400).send('account does not exists');
   return;
 });
