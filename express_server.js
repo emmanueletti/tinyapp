@@ -142,16 +142,41 @@ app.get('/urls/new', (req, res) => {
 
 // Read GET /urls/:shortURL
 app.get('/urls/:shortURL', (req, res) => {
+  // access shortlink that doesn't exist at all
+  if (!urlDatabase[req.params.shortURL]) {
+    res.status(401).render('urls_accessError');
+  }
+
+  // accessing shortlink that doesnt belong to user
+  if (req.cookies['user_id'] !== urlDatabase[req.params.shortURL].userID) {
+    //
+    res.status(401).render('urls_accessError');
+    return;
+  }
+
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL].longURL,
     userID: req.cookies['user_id'],
   };
+
   res.render('urls_show.ejs', templateVars);
 });
 
 // Edit POST /urls/:shortURL/update
 app.post('/urls/:shortURL/update', (req, res) => {
+  // request does not have a user id cookie - cURLers
+  if (!req.cookies['user_id']) {
+    res.status(401).render('urls_accessError');
+    return;
+  }
+
+  // accessing shortlink that doesnt belong to user
+  if (req.cookies['user_id'] !== urlDatabase[req.params.shortURL].userID) {
+    res.status(401).render('urls_accessError');
+    return;
+  }
+
   const longURL = req.body.longURL;
   const shortURL = req.params.shortURL;
   urlDatabase[shortURL].longURL = longURL;
@@ -180,6 +205,18 @@ app.post('/urls', (req, res) => {
 
 // Delete POST /urls/:shortURL/delete
 app.post('/urls/:shortURL/delete', (req, res) => {
+  // request does not have a user id cookie - cURLers
+  if (!req.cookies['user_id']) {
+    res.status(401).render('urls_accessError');
+    return;
+  }
+
+  // accessing shortlink that doesnt belong to user
+  if (req.cookies['user_id'] !== urlDatabase[req.params.shortURL].userID) {
+    res.status(401).render('urls_accessError');
+    return;
+  }
+
   delete urlDatabase[req.params.shortURL];
   res.redirect('/urls');
 });
