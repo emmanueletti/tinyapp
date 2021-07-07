@@ -116,9 +116,11 @@ app.post('/urls/:shortURL/update', (req, res) => {
   return res.redirect('/urls');
 });
 
-// Add POST /urls
+// Add Feature - POST /urls
 app.post('/urls', (req, res) => {
   const userID = req.cookies['user_id'];
+  const longURL = req.body.longURL;
+  const shortURL = generateRandomString();
 
   // authenticate presense of or validity of user_id from request cookie
   const failedAuthentication = userIdAuthentication(users, userID, res);
@@ -126,14 +128,9 @@ app.post('/urls', (req, res) => {
     return failedAuthentication;
   }
 
-  const shortURL = generateRandomString();
+  // create new URL in database
+  urlDatabase[shortURL] = { longURL, userID };
 
-  urlDatabase[shortURL] = {
-    longURL: req.body.longURL,
-    userID: req.cookies['user_id'],
-  };
-
-  urlDatabase[shortURL].longURL = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);
 });
 
