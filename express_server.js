@@ -136,19 +136,22 @@ app.post('/urls', (req, res) => {
 
 // Delete POST /urls/:shortURL/delete
 app.post('/urls/:shortURL/delete', (req, res) => {
-  // request does not have a user id cookie - cURLers
-  if (!req.cookies['user_id']) {
-    res.status(401).render('urls_accessError');
-    return;
+  const userID = req.cookies['user_id'];
+  const shortURL = req.params.shortURL;
+
+  // authenticate presense of or validity of user_id from request cookie
+  const failedAuthentication = userIdAuthentication(users, userID, res);
+  if (failedAuthentication) {
+    return failedAuthentication;
   }
 
-  // accessing shortlink that doesnt belong to user
-  if (req.cookies['user_id'] !== urlDatabase[req.params.shortURL].userID) {
-    res.status(401).render('urls_accessError');
-    return;
+  // check if request is accessing shortlink with user id that matches user_id cookie
+  if (userID !== urlDatabase[shortURL].userID) {
+    return res.status(401).send('<h2> Cannot Edit: You do not own this link </h2>');
   }
 
-  delete urlDatabase[req.params.shortURL];
+  delete urlDatabase[shortURL];
+
   res.redirect('/urls');
 });
 
