@@ -3,8 +3,8 @@ const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 
 const findCorrespondingId = require('./lib/findCorrespondingId');
-const urlDatabase = require('./lib/urlDatabase');
-const users = require('./lib/usersDataBase');
+const urlDatabase = require('./database/urlDatabase');
+const users = require('./database/usersDataBase');
 const generateRandomString = require('./lib/generateRandomString');
 const urlsForUser = require('./lib/urlsForUser');
 const checkEmailExists = require('./lib/checkEmailExists');
@@ -26,12 +26,13 @@ app.get('/', (req, res) => {
   res.redirect('/login');
 });
 
-/* CORE B.R.E.A.D FUNCTIONALITY */
+/* CORE B.R.E.A.D / C.R.U.D FUNCTIONALITY */
 
 // Browse GET /urls
 app.get('/urls', (req, res) => {
-  // client not logged in
-  if (!req.cookies['user_id']) {
+  // check if user is logged in
+  const user = req.cookies['user_id'];
+  if (!user) {
     return res.status(401).send('<h2> Please Log In </h2>');
   }
 
