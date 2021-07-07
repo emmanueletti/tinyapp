@@ -8,6 +8,7 @@ const users = require('./database/usersDataBase');
 const generateRandomString = require('./lib/generateRandomString');
 const urlsForUser = require('./lib/urlsForUser');
 const checkEmailExists = require('./lib/checkEmailExists');
+const userIdAuthentication = require('./lib/cookieAuthentication');
 
 const app = express();
 const PORT = 8080;
@@ -30,16 +31,10 @@ app.get('/', (req, res) => {
 
 // Browse GET /urls
 app.get('/urls', (req, res) => {
-  // check if request has a user_id property in cookies
   const userID = req.cookies['user_id'];
-  if (!userID) {
-    return res.status(401).send('<h2> Please Log In </h2>');
-  }
 
-  // check if user_id in request matches user in database
-  if (!users[userID]) {
-    return res.status(401).send('<h2> Unknown User ID: Please Log In </h2>');
-  }
+  // cookieAuthentication(users, userID, res);
+  const failedAuthentication = userIdAuthentication(users, userID, res);
 
   // filter urls to just the ones belonging to userID
   const templateVars = {
@@ -47,23 +42,14 @@ app.get('/urls', (req, res) => {
     userID,
   };
 
-  res.render('urls_index', templateVars);
+  return failedAuthentication || res.render('urls_index', templateVars);
 });
 
 // Form to Add new URL - important to be above GET /urls/:shortURL
 app.get('/urls/new', (req, res) => {
-  // check if request has a user_id property in cookies
   const userID = req.cookies['user_id'];
-  if (!userID) {
-    return res.status(401).send('<h2> Please Log In </h2>');
-  }
 
-  // check if user_id in request matches user in database
-  if (!users[userID]) {
-    return res.status(401).send('<h2> Unknown User ID: Please Log In </h2>');
-  }
-
-  res.render('urls_new.ejs', { userID });
+  return userIdAuthentication(users, userID, res) || res.render('urls_new.ejs', { userID });
 });
 
 // Read GET /urls/:shortURL
@@ -195,11 +181,10 @@ app.post('/register', (req, res) => {
 
 // GET login form
 app.get('/login', (req, res) => {
+  // first check if userID is present
+  // then check if user_id cookie matches something in our database
+  // then check
   // user already logged in
-  if (req.cookies['user_id']) {
-    res.redirect('/urls');
-    return;
-  }
 
   const cookieID = req.cookies['user_id'];
   const templateVars = {
