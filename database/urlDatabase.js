@@ -7,9 +7,13 @@ const urlDatabase = {
     longURL: 'https://www.google.ca',
     userID: 'userRandomID',
   },
-  abcdef: {
+  abc: {
     longURL: 'https://www.xkcd.com',
     userID: 'user3RandomID',
+  },
+  def: {
+    longURL: 'https://www.youtube.com',
+    userID: 'userRandomID',
   },
 };
 

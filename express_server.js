@@ -8,7 +8,7 @@ const users = require('./database/usersDataBase');
 const generateRandomString = require('./lib/generateRandomString');
 const urlsForUser = require('./lib/urlsForUser');
 const checkEmailExists = require('./lib/checkEmailExists');
-const userIdAuthentication = require('./lib/cookieAuthentication');
+const userIdAuthentication = require('./lib/userIdAuthentication');
 
 const app = express();
 const PORT = 8080;
@@ -29,79 +29,101 @@ app.get('/', (req, res) => {
 
 /* CORE B.R.E.A.D / C.R.U.D FUNCTIONALITY */
 
-// Browse GET /urls
+// Browse Feature - GET /urls
 app.get('/urls', (req, res) => {
   const userID = req.cookies['user_id'];
 
-  // cookieAuthentication(users, userID, res);
+  /// authenticate presense of or validity of user_id from request cookie
   const failedAuthentication = userIdAuthentication(users, userID, res);
+  if (failedAuthentication) {
+    return failedAuthentication;
+  }
 
   // filter urls to just the ones belonging to userID
   const templateVars = {
-    urls: urlsForUser(userID),
     userID,
+    urls: urlsForUser(userID),
   };
 
-  return failedAuthentication || res.render('urls_index', templateVars);
+  return res.render('urls_index', templateVars);
 });
 
 // Form to Add new URL - important to be above GET /urls/:shortURL
 app.get('/urls/new', (req, res) => {
   const userID = req.cookies['user_id'];
 
-  return userIdAuthentication(users, userID, res) || res.render('urls_new.ejs', { userID });
-});
-
-// Read GET /urls/:shortURL
-app.get('/urls/:shortURL', (req, res) => {
-  // accessing shortlink that doesn't exist at all
-  if (!urlDatabase[req.params.shortURL]) {
-    res.status(401).render('urls_accessError');
+  // authenticate presense of or validity of user_id from request cookie
+  const failedAuthentication = userIdAuthentication(users, userID, res);
+  if (failedAuthentication) {
+    return failedAuthentication;
   }
 
-  // accessing shortlink that doesnt belong to user
-  if (req.cookies['user_id'] !== urlDatabase[req.params.shortURL].userID) {
-    res.status(401).render('urls_accessError');
-    return;
+  return res.render('urls_new.ejs', { userID });
+});
+
+// Read Feature - GET /urls/:shortURL
+app.get('/urls/:shortURL', (req, res) => {
+  const userID = req.cookies['user_id'];
+  const shortURL = req.params.shortURL;
+
+  // authenticate presense of or validity of user_id from request cookie
+  const failedAuthentication = userIdAuthentication(users, userID, res);
+  if (failedAuthentication) {
+    return failedAuthentication;
+  }
+
+  // check if requested short link is in database
+  if (!urlDatabase[shortURL]) {
+    return res.status(400).send('<h2> This link does not exist </h2>');
+  }
+
+  // check if user cookie id matches the user id of the requested short link
+  if (userID !== urlDatabase[shortURL].userID) {
+    return res.status(401).send('<h2> You do not own this link </h2>');
   }
 
   const templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL].longURL,
-    userID: req.cookies['user_id'],
+    shortURL,
+    userID,
+    longURL: urlDatabase[shortURL].longURL,
   };
 
-  res.render('urls_show.ejs', templateVars);
+  return res.render('urls_show.ejs', templateVars);
 });
 
-// Edit POST /urls/:shortURL/update
+// Edit Feature - POST /urls/:shortURL/update
 app.post('/urls/:shortURL/update', (req, res) => {
-  // request does not have a user id cookie - cURLers
-  if (!req.cookies['user_id']) {
-    res.status(401).render('urls_accessError');
-    return;
-  }
-
-  // accessing shortlink that doesnt belong to user
-  if (req.cookies['user_id'] !== urlDatabase[req.params.shortURL].userID) {
-    res.status(401).render('urls_accessError');
-    return;
-  }
-
+  const userID = req.cookies['user_id'];
   const longURL = req.body.longURL;
   const shortURL = req.params.shortURL;
+
+  // authenticate presense of or validity of user_id from request cookie
+  const failedAuthentication = userIdAuthentication(users, userID, res);
+  if (failedAuthentication) {
+    return failedAuthentication;
+  }
+
+  // check if request is accessing shortlink with user id that matches user_id cookie
+  if (userID !== urlDatabase[shortURL].userID) {
+    return res.status(401).send('<h2> Cannot Edit: You do not own this link </h2>');
+  }
+
+  // change the longURL property of the shortURL object
   urlDatabase[shortURL].longURL = longURL;
 
   // POST => GET => Redirect pattern
-  res.redirect('/urls');
+  // send user to urls
+  return res.redirect('/urls');
 });
 
 // Add POST /urls
 app.post('/urls', (req, res) => {
-  // client not logged in
-  if (!req.cookies['user_id']) {
-    res.status(401).send('Error: Please login first');
-    return;
+  const userID = req.cookies['user_id'];
+
+  // authenticate presense of or validity of user_id from request cookie
+  const failedAuthentication = userIdAuthentication(users, userID, res);
+  if (failedAuthentication) {
+    return failedAuthentication;
   }
 
   const shortURL = generateRandomString();

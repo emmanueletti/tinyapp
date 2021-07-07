@@ -11,7 +11,7 @@ const users = {
   },
   user3RandomID: {
     id: 'user3RandomID',
-    email: 'a@a.com',
+    email: 'a@gmail.com',
     password: '123',
   },
 };
