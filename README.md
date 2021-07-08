@@ -10,8 +10,6 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 !["Screenshot of URL creater"](https://github.com/emmanueletti/tinyapp/blob/master/docs/urls_create.png?raw=true)
 
-!["Screenshot of URL editing"](https://github.com/emmanueletti/tinyapp/blob/master/docs/urls_edit.png)
-
 ## Dependencies
 
 - Node.js
