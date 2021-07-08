@@ -19,6 +19,7 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 ## Getting Started
 
+- Fork and clone project
 - Install all dependencies
 
 ```bash

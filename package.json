@@ -1,12 +1,12 @@
 {
   "name": "tinyapp",
   "version": "1.0.0",
-  "description": "URL shortner project for LHL",
-  "main": "index.js",
+  "description": "TinyApp is a full stack web application built with Node and Express that allows users to shorten long URLs (à la bit.ly)",
+  "main": "server/express_server.js",
   "scripts": {
-    "start": "",
+    "start": "node server/express_server.js",
     "test": "mocha",
-    "dev": "nodemon -L ./server/express_server.js"
+    "dev": "nodemon -L server/express_server.js"
   },
   "repository": {
     "type": "git",
