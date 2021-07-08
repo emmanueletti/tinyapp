@@ -1,6 +1,6 @@
 const express = require('express');
 const morgan = require('morgan');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session');
 
 const { urlDatabase, users } = require('./database');
@@ -197,6 +197,7 @@ app.get('/register', (req, res) => {
 app.post('/register', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
+  // ideally use the async versions of bcrypt with promise chaining
   const hashedPassword = bcrypt.hashSync(password, 10);
   const id = generateRandomString();
 
@@ -253,6 +254,7 @@ app.post('/login', (req, res) => {
   const hashedPassword = users[userID].hashedPassword;
 
   // check if password is incorrect
+  // ideally use the async versions of bcrypt with promise chaining
   if (!bcrypt.compareSync(password, hashedPassword)) {
     return res.status(403).send('<h2> ERROR: Password is incorrrect </h2>');
   }
