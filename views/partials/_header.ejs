@@ -16,21 +16,21 @@
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-        <div>
-          <% if(userID) { %>
-          <div style="display:flex;align-items: center;">
-            <p class="font-weight-bold pt-2 pl-1">Logged in as: <%= userID %><p/>
-            <form method="POST" action="/logout" class="pl-3">
-              <button type="submit" class="btn btn-primary">Logout</button>
-            </form>
-          </div>
-          <% } else {%>
-            <a href="/register"><button type="submit" class="btn btn-primary">Register</button></a>
-            <a href="/login" class="ml-3"><button type="submit" class="btn btn-primary">Login</button></a>
-          </div>
-          <% } %>
-        </div>
       </div>
-    </div>
+     </div>
+    
+      <div>
+        <% if(userID) { %>
+        <div style="display:flex;align-items: center;">
+          <p class="font-weight-bold pt-3 pl-1">Logged in as: <%= userID %><p/>
+          <form method="POST" action="/logout" class="pl-3">
+            <button type="submit" class="btn btn-primary">Logout</button>
+          </form>
+        </div>
+        <% } else {%>
+        <a href="/register"><button type="submit" class="btn btn-primary">Register</button></a>
+        <a href="/login" class="ml-3"><button type="submit" class="btn btn-primary">Login</button></a>
+      </div>
+        <% } %>
   </nav>
 </header>
